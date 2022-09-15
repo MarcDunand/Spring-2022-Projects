@@ -1,0 +1,101 @@
+let color = 0;
+let prevy = []
+let data = []
+
+function setup() {
+	createCanvas(840, 420);
+	background(18, 110, 98, 255);
+	pixelDensity(1);
+	loadPixels();
+	prev = 0
+	bigPrev = []
+	
+	for(let y = 0; y < height; y++) {
+		oldPrev = bigPrev;
+		bigPrev = []
+		for(let x = 0; x < width; x++) {
+			
+			index = (x + y * width) * 4;
+			noiseVal = noise(x/150, y/150);
+			noiseVal2 = noise(x/150, y/150);
+			h = noiseVal - noiseVal2*((420-y)/500)
+			if(y > 209) {
+				h += ((y-209)/600)
+			}
+			
+			if(h < 0.2) {
+				pixels[index] = 32;
+				pixels[index+1] = 56;
+				pixels[index+2] = 129;
+				pixels[index+3] = 255;
+			}
+			if (((((prev % 0.05) - (h % 0.05)) - (prev-h)) != 0 || (((oldPrev[x] % 0.05) - (h % 0.05)) - (oldPrev[x]-h)) != 0) && x != 0){
+				pixels[index] = 50;
+				pixels[index+1] = 50;
+				pixels[index+2] = 50;
+				pixels[index+3] = 255;
+			}
+				
+			prev = h
+			append(bigPrev, prev);
+		}
+		append(data, bigPrev);
+	}
+	updatePixels();
+	
+	data = reverse(data);
+	
+	localMins = []
+	prev2 = 100
+	prev1 = 100
+	for(x = 0; x < width; x++) {
+		if(prev2 > prev1 && prev1 < data[0][x]) {
+			append(localMins, [x - 1, 419])
+		}
+		prev2 = prev1
+		prev1 = data[0][x]
+	}
+	print(localMins)
+	prevy = localMins
+}
+
+
+function draw() {
+	newprevy = []
+	loadPixels();
+	for(let i = 0; i < prevy.length; i++) {
+		index = (prevy[i][0] + (prevy[i][1])*width)*4;
+		//if(pixels[index] == 18) {
+			data[419 - prevy[i][1]][prevy[i][0]] = 100
+			pixels[index] = 32;
+			pixels[index+1] = 56;
+			pixels[index+2] = 129;
+			pixels[index+3] = 255;
+			minval = 100
+			lowpos = [0, 0]
+			//print("-------")
+			for(let j = prevy[i][0] - 1; j < prevy[i][0] + 2; j++) {
+				for(let k = prevy[i][1] - 1; k < prevy[i][1] + 2; k++) {
+					if(k < 420 && j > -1 && j < 840) {
+						print(k)
+						option = data[419 - k][j];
+						//print(option)
+						if(option < minval) {
+							minval = option
+							lowpos = [j, k]
+						}
+					}
+				}
+			}
+			
+			append(newprevy, lowpos)
+		//}
+	}
+	updatePixels();
+	prevy = newprevy
+}
+
+function mousePressed() {
+	
+
+}
