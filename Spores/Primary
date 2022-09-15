@@ -1,0 +1,110 @@
+let poss = [];
+let locs = [];
+function setup() {
+	for(y = 0; y < 90; y++) {
+		append(locs, [])
+		for(x = 0; x < 160; x++) {
+			append(locs[y], 0)
+		}
+	}
+	createCanvas(800, 450);
+	background(0);
+	append(poss, new Cell(400, 225))
+	fill(25)
+	
+}
+
+function draw() {
+	closest = poss[0]
+	mindist = distC(poss[0])
+	for(i = 1; i < poss.length; i++) {
+		potDist = distC(poss[i])
+		if(potDist < mindist) {
+			mindist = potDist
+			closest = poss[i]
+		}
+	}
+	if(closest.x < 10) {
+		x = 10
+	} else if(closest.x > 790) {
+		x = 790
+	} else {
+		x = closest.x
+	}
+	
+	if(closest.y < 10) {
+		y = 10
+	} else if(closest.y > 440) {
+		y = 440
+	} else {
+		y = closest.y
+	}
+	
+	dups = locs[y/5][x/5 + 1]
+	
+	if(dups == 0) {
+		append(poss, new Cell(x + 5, y))
+	}
+	else {
+		push()
+		fill(dups*10)
+		rect(x + 3, y-2, 4, 4)
+		pop()
+		locs[y/5][x/5 + 1] += 1
+	}
+	dups = locs[y/5 + 1][x/5]
+	
+	if(dups == 0) {
+		append(poss, new Cell(x, y + 5))
+	}
+	else {
+		push()
+		fill(dups*10)
+		rect(x -2, y+3, 4, 4)
+		pop()
+		locs[y/5 + 1][x/5] += 1
+	}
+	
+	dups = locs[y/5 - 1][x/5]
+	
+	if(dups == 0) {
+		append(poss, new Cell(x, y - 5))
+	}
+	else {
+		push()
+		fill(dups*10)
+		rect(x -2, y-7, 4, 4)
+		pop()
+		locs[y/5 - 1][x/5] += 1
+	}
+	
+	dups = locs[y/5][x/5 - 1]
+	
+	if(dups == 0) {
+		append(poss, new Cell(x - 5, y))
+	}
+	else {
+		push()
+		fill(dups*10)
+		rect(x - 7, y-2, 4, 4)
+		pop()
+		locs[y/5][x/5 - 1] += 1
+	}
+}
+	
+class Cell {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+		push()
+		fill(pixels[x*4+y*3200] + 5)
+		pop()
+		rect(x-2, y-2, 4, 4)
+		locs[y/5][x/5] += 1;
+  }
+}
+
+function distC(C)
+	{
+		return dist(C.x, C.y, mouseX, mouseY)
+	}
