@@ -1,0 +1,72 @@
+let objectList = []
+
+function setup() {
+	createCanvas(windowWidth, windowHeight);
+	background(0);
+}
+
+
+function findIndex(x, y) {
+	if(x >= width || y >= height) {
+		return(null)
+	}
+	else {
+		return (y*width + x)*4
+	}
+}
+
+function setColor(colorList, x, y) {
+	
+	let index = findIndex(x, y)
+		
+	pixels[index] = colorList[0]
+	pixels[index + 1] = colorList[1]
+	pixels[index + 2] = colorList[2]
+	pixels[index + 3] = colorList[3]
+}
+
+
+class Pixel
+{
+	constructor(x, y)
+	{
+		this.x = x
+		this.y = y
+		this.v = 0
+		this.alive = true
+		
+		this.myColor = [252, 12, 152, 255]
+	}
+	
+	fall() {
+		setColor([0, 0, 0, 255], this.x, this.y)
+	
+		this.v += 0.3 - abs(this.v/20)
+		this.x += random([-1, 0, 1])
+		this.y += floor(this.v*random(0.9, 1.1))
+		
+		if(this.y < height) {
+			setColor(this.myColor, this.x, this.y)
+		} else if(this.v > 5) {
+			this.v = this.v * random(-0.99, -0.7)
+		} else {
+			this.alive = false
+		}
+	}
+}
+
+
+function draw() {
+	loadPixels()
+	objectList.push(new Pixel(mouseX, mouseY))
+	
+	for(let i = 0; i < objectList.length; i++) {
+		if(objectList[i].alive) {
+			objectList[i].fall()
+		}
+		else {
+			objectList.splice(i, 1)
+		}
+	}
+	updatePixels()
+}
