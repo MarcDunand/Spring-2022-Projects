@@ -1,0 +1,293 @@
+// p5.js + handsfree.js (by Oz Ramos)
+// Documentation: https://handsfree.js.org/
+// https://unpkg.com/handsfree@8.5.1/build/lib/handsfree.js
+// Note: this downloads large models the first time it's run.
+
+let handsfree; // The handsfree.js tracker
+let webcam; // A webcam video (for display only)
+
+let colorSet = [[238, 86, 19, 256], [254, 253, 186, 255]]
+let pixelSet = []
+let seedOffset = 0
+let prevMousePos = 0
+
+
+//------------------------------------------
+function setup() {
+  createCanvas(640, 480); 
+  
+  // Optionally, create a webcam object. It's just for show.
+  webcam = createCapture(VIDEO);
+  webcam.size(640, 480);
+  webcam.hide();
+  
+  // Configure handsfree.js to track hands, body, and/or face.
+  handsfree = new Handsfree({
+    showDebug: false, /* shows or hides the camera */
+    hands: true,      /* acquire hand data? */
+    pose: true,       /* acquire body data? */
+    facemesh: true,   /* acquire face data? */
+    maxNumHands: 2
+  });
+	
+	const unwantedDomElements = document.querySelectorAll('.handsfree-debugger');
+	unwantedDomElements.forEach(element => { element.remove(); });
+
+  handsfree.start();
+  chooseFaceLandmarks(); // See below
+
+	noiseSeed(99);
+}
+
+function draw() {
+	seedOffset = random(100)
+	
+	loadPixels()
+	for(let i = 0; i < pixelSet.length; i++) {
+		if(pixelSet[i].alive) {
+			pixelSet[i].move()
+		} else {
+			pixelSet.splice(i, 1)
+		}
+	}
+	updatePixels()
+	
+}
+
+
+class Pixel
+{
+	constructor(x, y)
+	{
+		this.x = x
+		this.y = y
+		this.index = pixelIndex(this.x, this.y)
+		this.color = newColor(this.x, this.y, 255)
+		this.smoke = false
+		this.alive = true
+		colorPixel(this.index, this.color)
+	}
+	
+	move() {
+		if(searchCol(this.index, -5, -1) && random() < 0.5 && !this.smoke){
+			colorPixel(this.index, [0, 0, 0, 255])
+			this.y -= int(random(0, 2))
+			this.index = pixelIndex(this.x, this.y)
+			this.color[3] = this.color[3] - (3 + random(3))
+			colorPixel(this.index, this.color)
+			if(this.color[3] < 75) {
+				if(random() < 0.1) {
+					this.smoke = true
+					this.color = [255, 255, 255, random(this.color[3], 25)]
+				}
+				else  {
+					colorPixel(this.index, [0, 0, 0, 255])
+					this.alive = false
+				}
+			}
+		}
+		else if(this.smoke) {
+			colorPixel(this.index, [0, 0, 0, 255])
+			this.y -= int(random(0, 3))
+			if(random() < 0.2){ 
+				this.x += int(random(-2, 2))
+			}
+			if(random() < 0.05){
+				this.color = [255, 255, 255, this.color[3] - 5]
+				if(this.color[3] < 0) {
+					this.alive = false
+				}
+			}
+				
+			this.index = pixelIndex(this.x, this.y)
+			colorPixel(this.index, this.color)
+		}
+		else if(!searchCol(this.index, -5, -1) && random() < 0.1) {
+			this.color = newColor(this.x, this.y, 255)
+			colorPixel(this.index, this.color)
+		}
+	}
+}
+
+function searchCol(index, min, max) {
+	for(let i = min; i < max; i++) {
+		if(pixels[index + i*4*width] != 0) {
+      return false;
+		}
+  }
+	return true;
+}
+
+function mouseDragged() {
+	for(let y = mouseY - 2; y < mouseY + 3; y++) {
+		for(let x = mouseX - 2; x < mouseX + 3; x++) {
+			var f = new Pixel(int(x), int(y))
+			append(pixelSet, f)
+		}
+	}
+}
+			
+
+function newColor(x, y, a) {
+	x = x/5
+	y = y/5 
+	colorScale = noise((x + seedOffset)/3, (y + seedOffset)/3) * noise((x + seedOffset)/3, (y + seedOffset)/3);
+	return [238 + colorScale*16, 86 + colorScale*167, 19 + colorScale*167, a]
+}
+
+function colorPixel(index, colorList) {
+	pixels[index] = colorList[0]
+	pixels[index + 1] = colorList[1]
+	pixels[index + 2] = colorList[2]
+	pixels[index + 3] = colorList[3]
+}
+	
+
+function pixelIndex(x, y) {
+	return y*width*4 + x*4
+}
+
+
+
+
+
+
+//------------------------------------------
+function draw() {
+	seedOffset = random(100)
+  background(0);
+  
+  //drawVideoBackground();
+	
+	loadPixels()
+	for(let i = 0; i < pixelSet.length; i++) {
+		if(pixelSet[i].alive) {
+			pixelSet[i].move()
+		} else {
+			pixelSet.splice(i, 1)
+		}
+	}
+	updatePixels()
+	
+	drawHandPoints();
+	
+  noStroke(); 
+  fill('black'); 
+  text("FPS: " + int(frameRate()), 10, 20);
+}
+
+
+//------------------------------------------
+function drawVideoBackground(){
+  push();
+  translate(width, 0);
+  scale(-1,1);
+  tint(255,255,255, 72);
+  image(webcam, 0, 0, width, height);
+  tint(255);
+  pop();
+}
+
+//------------------------------------------
+// HANDS: 21 2D landmarks per hand, up to 4 hands at once
+// Detects pinching states, hand pointers, and gestures
+
+function drawHandPoints() {
+
+  if (handsfree.data.hands) {
+    if (handsfree.data.hands.multiHandLandmarks) {
+      var handLandmarks = handsfree.data.hands.multiHandLandmarks;   
+      var nHands = handLandmarks.length;
+      
+      var handVertexIndices = [
+        [17,0,1,5,9,13,17], /* palm */
+        [1,2,3,4], /* thumb */
+        [5,6,7,8], /* index */
+        [9,10,11,12], /* middle */
+        [13,14,15,16], /* ring */
+        [17,18,19,20], /* pinky */
+        ];
+      
+      // Draw lines connecting the parts of the fingers
+      noFill(); 
+      stroke('white'); 
+      for (var h = 0; h < nHands; h++) {
+        for (var f=0; f<handVertexIndices.length; f++){ // finger
+          beginShape(); 
+          for (var j=0; j<handVertexIndices[f].length; j++){
+            var ji = handVertexIndices[f][j];
+            var jx = handLandmarks[h][ji].x;
+            var jy = handLandmarks[h][ji].y;
+            jx = map(jx, 0, 1, width, 0);
+            jy = map(jy, 0, 1, 0, height);
+            vertex(jx, jy); 
+          }
+          endShape(); 
+        }
+      }
+      
+      // Draw just the points of the hands
+      for (var h = 0; h < nHands; h++) {
+        for (var i = 0; i <= 20; i++) {
+          var px = handLandmarks[h][i].x;
+          var py = handLandmarks[h][i].y;
+          px = map(px, 0, 1, width, 0);
+          py = map(py, 0, 1, 0, height);
+					if(i == 8 || i == 4 || i == 12 || i == 16 || i == 20 ){
+						//if(2 <= mouseX && mouseX <= width - 3 && 2 <= mouseY && mouseY <= height - 3) {
+							for(let y = py - 1; y < py + 1; y++) {
+								for(let x = px - 1; x < px + 1; x++) {
+									var g = new Pixel(int(x), int(y))
+									append(pixelSet, g)
+								}
+							}
+						//}
+					}
+        }
+      }
+
+    }
+  }
+}
+
+
+//------------------------------------------
+// FACE: 468 2D face landmarks
+
+
+//================================================================
+let TRI;
+let VTX;
+function chooseFaceLandmarks(){
+  // Choose your preferred set of face keypoints: 7,33,68,468
+  // Uncomment one of the pairings below. (See landmarks.js)
+  //
+  // === Bare minimum, 7 points ===
+  // VTX = VTX7; TRI = TRI7;
+  // === 'Important' facial features, 33 points ===
+  // VTX = VTX33; TRI = TRI33;
+  // === Standard facial landmarks, 68 points ===
+  VTX = [
+  /* cont  */127,234,132, 58,172,150,149,148,152,377,378,379,397,288,361,454,356,
+  /* brows */ 70, 63,105, 66,107,336,296,334,293,300,
+  /* nose  */168,  6,195,  4, 98, 97,  2,326,327,
+  /* eyes  */ 33,160,158,133,153,144,362,385,387,263,373,380,
+  /* lip   */ 57, 40, 37,  0,267,270,287,321,314, 17, 84, 91,
+  /* mouth */ 78, 81, 13,311,308,402, 14,178,
+] 
+	TRI = [
+   0, 1,36,   0,17,36,   1, 2,41,  1,36,41,  2, 3,31,  2,31,41,  3, 4,48,  3,31,48,  4, 5,48,  5, 6,48,
+   6, 7,59,   6,48,59,   7, 8,58,  7,58,59,  8, 9,56,  8,56,57,  8,57,58,  9,10,55,  9,55,56, 10,11,54,
+  10,54,55,  11,12,54,  12,13,54, 13,14,35, 13,35,54, 14,15,46, 14,35,46, 15,16,45, 15,45,46, 16,26,45,
+  17,18,36,  18,19,37,  18,36,37, 19,20,38, 19,37,38, 20,21,39, 20,38,39, 21,27,39, 22,23,42, 22,27,42,
+  23,24,43,  23,42,43,  24,25,44, 24,43,44, 25,26,45, 25,44,45, 27,28,39, 27,28,42, 28,29,39, 28,29,42,
+  29,30,31,  29,30,35,  29,31,40, 29,35,47, 29,40,39, 29,42,47, 30,31,32, 30,32,33, 30,33,34, 30,34,35,
+  31,32,50,  31,40,41,  31,48,49, 31,49,50, 32,33,51, 32,50,51, 33,34,51, 34,35,52, 34,51,52, 35,46,47,
+  35,52,53,  35,53,54,  36,37,41, 37,38,40, 37,40,41, 38,39,40, 42,43,47, 43,44,47, 44,45,46, 44,46,47,
+  48,49,60,  48,59,60,  49,50,61, 49,60,61, 50,51,62, 50,61,62, 51,52,62, 52,53,63, 52,62,63, 53,54,64,
+  53,63,64,  54,55,64,  55,56,65, 55,64,65, 56,57,66, 56,65,66, 57,58,66, 58,59,67, 58,66,67, 59,60,67,
+  60,61,67,  61,62,66,  61,66,67, 62,63,66, 63,64,65, 63,65,66, 21,22,27,
+];
+  // === Full facemesh; 468 points ===
+  // VTX = VTX468; TRI = TRI468;
+}
