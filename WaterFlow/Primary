@@ -1,0 +1,134 @@
+let color = 0;
+let prevy = []
+let data = []
+let localMins = []
+
+function setup() {
+	createCanvas(840, 420);
+	background(0, 0, 0, 255);
+	pixelDensity(1);
+	loadPixels();
+	prev = 0
+	bigPrev = []
+	
+	for(let y = 0; y < height; y++) {
+		oldPrev = bigPrev;
+		bigPrev = []
+		for(let x = 0; x < width; x++) {
+			
+			index = (x + y * width) * 4;
+			noiseVal = noise(x/150, y/150);
+			noiseVal2 = noise(x/150, y/150);
+			h = noiseVal - noiseVal2*((420-y)/500)
+			if(y > 209) {
+				h += ((y-209)/600)
+			}
+			
+			if(h < 0.2) {
+				pixels[index] = 98*((h+0.1)*3.33333);
+				pixels[index+1] = 133*((h+0.1)*3.33333);
+				pixels[index+2] = 211;
+				pixels[index+3] = 255;
+			}
+			else {
+				pixels[index] = 165*(sqrt(h*1.13));
+				pixels[index+1] = 200;
+				pixels[index+2] = 143;
+				pixels[index+3] = 140;
+			}
+			if (((((prev % 0.05) - (h % 0.05)) - (prev-h)) != 0 || (((oldPrev[x] % 0.05) - (h % 0.05)) - (oldPrev[x]-h)) != 0) && x != 0){
+				pixels[index] = 50;
+				pixels[index+1] = 50;
+				pixels[index+2] = 50;
+				pixels[index+3] = 255;
+			}
+				
+			prev = h
+			append(bigPrev, prev);
+		}
+		append(data, bigPrev);
+	}
+	updatePixels();
+	
+	data = reverse(data);
+	
+	prev2 = 100
+	prev1 = 100
+	for(x = 0; x < width; x++) {
+		if(prev2 > prev1 && prev1 < data[0][x]) {
+			append(localMins, [x - 1, 419])
+		}
+		prev2 = prev1
+		prev1 = data[0][x]
+	}
+	print(localMins)
+	prevy = localMins
+}
+
+
+function draw() {
+	newprevy = []
+	loadPixels();
+	for(let i = 0; i < prevy.length; i++) {
+		index = (prevy[i][0] + (prevy[i][1])*width)*4;
+		if(pixels[index] > 98 || pixels[index + 2] != 211) {
+			elev = data[419 - prevy[i][1]][prevy[i][0]] % 100
+			if(pixels[index] != 50) {
+				pixels[index] = 20+elev*100;
+				pixels[index+1] = 40+elev*100;
+				pixels[index+2] = 151+elev*100;
+				pixels[index+3] = 255;
+			}
+			previndex = index
+			if(random() < 0.5) {
+				randx = floor(random(-1,2))
+				randy = 0
+			} else {
+				randx = 0
+				randy = floor(random(-1,2))
+			}
+			if(randx + prevy[i][0] > -1 && randx + prevy[i][0] < 840 && randy + prevy[i][1] < 420 && pixels[index + randx*4 + randy*3360] != 50) {
+				index = index + 4*randx + randy*3360
+				pixels[index] = 20+elev*100;
+				pixels[index+1] = 40+elev*100;
+				pixels[index+2] = 151+elev*100;
+				pixels[index+3] = 255;
+			}
+			minval = 9999999
+			lowpos = [0, 0]
+			data[419 - prevy[i][1]][prevy[i][0]] += 100
+			//print("-------")
+			for(let j = prevy[i][0] - 1; j < prevy[i][0] + 2; j++) {
+				for(let k = prevy[i][1] - 1; k < prevy[i][1] + 2; k++) {
+					if(k < 420 && k >= 0 && j > -1 && j < 840) {
+						
+						//print(k)
+						option = data[419 - k][j];
+						//print(option)
+						if(option < minval) {
+							minval = option
+							lowpos = [j + floor(random(-1,2)), k + floor(random(-1,2))]
+						}
+					}
+				}
+			}
+			if(lowpos[0] > 839) {
+				lowpos[0] = 839
+			}
+			else if(lowpos[0] < 0) {
+				lowpos[0] = 0
+			}
+			if(lowpos[1] > 419) {
+				lowpos[1] = 419
+			}
+			append(newprevy, lowpos)
+		}
+	}
+	updatePixels();
+	prevy = newprevy
+}
+
+function mousePressed() {
+	append(newprevy, random(localMins));
+	
+}
