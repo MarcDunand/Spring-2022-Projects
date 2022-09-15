@@ -1,0 +1,121 @@
+let colorSet = [[238, 86, 19, 256], [254, 253, 186, 255]]
+let pixelSet = []
+let seedOffset = 0
+let prevMousePos = 0
+
+function setup() {
+	createCanvas(800, 800);
+	background(0);
+	noiseSeed(99);
+}
+
+function draw() {
+	seedOffset = random(100)
+	
+	loadPixels()
+	for(let i = 0; i < pixelSet.length; i++) {
+		if(pixelSet[i].alive) {
+			pixelSet[i].move()
+		} else {
+			pixelSet.splice(i, 1)
+		}
+	}
+	updatePixels()
+	
+	//print(pixelSet.length)
+}
+
+
+class Pixel
+{
+	constructor(x, y)
+	{
+		this.x = x
+		this.y = y
+		this.index = pixelIndex(this.x, this.y)
+		this.color = newColor(this.x, this.y, 255)
+		this.smoke = false
+		this.alive = true
+		colorPixel(this.index, this.color)
+	}
+	
+	move() {
+		if(searchCol(this.index, -5, -1) && random() < 0.5 && !this.smoke){
+			colorPixel(this.index, [0, 0, 0, 255])
+			this.y -= int(random(0, 2))
+			this.index = pixelIndex(this.x, this.y)
+			this.color[3] = this.color[3] - (3 + random(3))
+			colorPixel(this.index, this.color)
+			if(this.color[3] < 75) {
+				if(random() < 0.1) {
+					this.smoke = true
+					this.color = [255, 255, 255, random(this.color[3], 25)]
+				}
+				else  {
+					colorPixel(this.index, [0, 0, 0, 255])
+					this.alive = false
+				}
+			}
+		}
+		else if(this.smoke) {
+			colorPixel(this.index, [0, 0, 0, 255])
+			this.y -= int(random(0, 3))
+			if(random() < 0.2){ 
+				this.x += int(random(-2, 2))
+			}
+			if(random() < 0.05){
+				this.color = [255, 255, 255, this.color[3] - 5]
+				if(this.color[3] < 0) {
+					this.alive = false
+				}
+			}
+				
+			this.index = pixelIndex(this.x, this.y)
+			colorPixel(this.index, this.color)
+		}
+		else if(!searchCol(this.index, -5, -1) && random() < 0.1) {
+			this.color = newColor(this.x, this.y, 255)
+			colorPixel(this.index, this.color)
+		}
+	}
+}
+
+function searchCol(index, min, max) {
+	for(let i = min; i < max; i++) {
+		if(pixels[index + i*4*width] != 0) {
+      return false;
+		}
+  }
+	return true;
+}
+
+function mouseDragged() {
+	if(2 <= mouseX && mouseX <= width - 3 && 2 <= mouseY && mouseY <= height - 3) {
+		for(let y = mouseY - 2; y < mouseY + 3; y++) {
+			for(let x = mouseX - 2; x < mouseX + 3; x++) {
+				var f = new Pixel(int(x), int(y))
+				append(pixelSet, f)
+			}
+		}
+	}
+}
+			
+
+function newColor(x, y, a) {
+	x = x/5
+	y = y/5 
+	colorScale = noise((x + seedOffset)/3, (y + seedOffset)/3) * noise((x + seedOffset)/3, (y + seedOffset)/3);
+	return [238 + colorScale*16, 86 + colorScale*167, 19 + colorScale*167, a]
+}
+
+function colorPixel(index, colorList) {
+	pixels[index] = colorList[0]
+	pixels[index + 1] = colorList[1]
+	pixels[index + 2] = colorList[2]
+	pixels[index + 3] = colorList[3]
+}
+	
+
+function pixelIndex(x, y) {
+	return y*width*4 + x*4
+//}
