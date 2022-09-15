@@ -1,0 +1,77 @@
+let colorMin = [238, 86, 19, 255]
+let colorMax = [255, 253, 186, 255]
+let colorRange = [colorMax[0] - colorMin[0], colorMax[1] - colorMin[1], colorMax[2] - colorMin[2], colorMax[3] - colorMin[3]]
+pixelDensity(1)
+
+
+
+function setup() {
+	createCanvas(windowWidth, windowHeight)
+	background(0)
+}
+
+
+
+function findIndex(x, y) {
+	if(x >= width || y >= height) {
+		return(null)
+	}
+	else {
+		return (y*width + x)*4
+	}
+}
+
+
+function setColor(colorList) {
+	if(colorList = [0, 0, 0, 0]) {  //randomize color
+		for(let i = 0; i < 3; i++) {
+			let rand = random()
+			 colorList[i] = random(colorMin[i], colorMin[i] + colorRange[i]*rand)
+		}
+		colorList[3] = 255
+		return colorList
+	}
+		 
+}
+
+
+
+function mouseDragged() {
+	var f = new FireSource(mouseX, mouseY)
+	f.updateColor()
+}
+
+
+
+class FireSource //Stationary "coals"
+{
+	constructor(x, y)
+	{
+		this.d = 5
+		this.x = x - (x % this.d)
+		this.y = y - (y % this.d)
+		
+		this.myColor = setColor([0, 0, 0, 0])
+	}
+	
+	updateColor() {
+		loadPixels()
+		let index
+		let y = this.y
+		while(y < this.y + this.d && y < height) {
+			let x = this.x
+			index = findIndex(x, y)
+			while(x < this.x + this.d && x < width) {
+				pixels[index] = this.myColor[0]
+				pixels[index + 1] = this.myColor[1]
+				pixels[index + 2] = this.myColor[2]
+				pixels[index + 3] = this.myColor[3]
+				
+				index += 4
+				x++
+			}
+			y++
+		}
+		updatePixels()
+	}
+}
