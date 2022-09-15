@@ -1,0 +1,23 @@
+function setup() {
+	createCanvas(680, 1000);
+	background(219, 214, 208);
+	noFill();
+	rectMode(CENTER);
+	let rMove = 0;
+	let rRot = 0;
+	
+	for(let i = 0; i < 22; i++) {
+		for(let j = 0; j < 12; j++) {
+			angleMode(DEGREES);
+			rRot += 0.17;
+			rMove += 0.03;
+			push();
+			translate(125+36*j+random(rMove), 100+36*i+random(rMove));
+			rotate(random(-1*rRot, rRot));
+			rectMode(CENTER);
+			rect(18, 18, 36, 36);
+			pop();
+		}
+	}
+	
+}
