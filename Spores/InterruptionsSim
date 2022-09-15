@@ -1,0 +1,30 @@
+function setup() {
+	createCanvas(720, 720);
+	background(255);
+	
+	let B = []
+	let i = 4 + random(0, 5)
+	let hole = false
+	for(let m = 0; m < i; m++) {
+		append(B, [random(65, 660), random(65, 660), random(0.5, 1.8)*random(0.5, 1.8)]);
+	}
+	
+	for(let y = 65; y < 676; y += 11) {
+		for(let x = 65; x < 676; x += 11) {
+			push()
+			hole = false
+			for(let j = 0; j < i; j++) {
+				if(abs(x - B[j][0]) < random(15, 40)*B[j][2] && abs(y - B[j][1]) < random(15, 40)*B[j][2]) {
+					hole = true
+				}
+			}
+			if(!hole) {
+				angleMode(DEGREES);
+				translate(x + random(-2, 2), y + random(-2, 2))
+				rotate(random(-45, 45) + random(-45, 45))
+				line(-7, 0, 8, 0)
+			}
+			pop()
+		}
+	}
+}
