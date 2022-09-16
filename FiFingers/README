@@ -1,0 +1,8 @@
+Uses Handsfree.js
+
+Each finger visible in the webcam is tracked by handsfree and made a source of FiCell
+
+FiCell generates a single firesource cell that then generates flame, steam and smoke cells.
+
+These cells all behave using their own FiCell rules and remain in a set grid allowing waving your fingers around to generate the illusion of creating a wind affecting the 
+fire.
