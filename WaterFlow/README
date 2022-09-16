@@ -1,0 +1,12 @@
+Small project simulating watershed.
+
+Water is generated at n locations on the bottom of the screen and then a selfish algorithm is used to allow the water to "flow" downhill according to an uneven perlin-based
+altitude that generally makes altitude decrease towards the top of the screen.
+
+Made different streams of water "hydrophobic" to one another so if two streams merge instead of them overlapping they stay next to each other and make a single, wider stream
+of water.
+
+Implemented an anti-trap alorithm so that when local minimums are found in the perlin noise, lakes are slowely formed until the water overflows and contiues towards lower
+altitudes.
+
+"Prettified" the simulation.
