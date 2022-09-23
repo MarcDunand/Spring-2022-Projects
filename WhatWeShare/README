@@ -1,0 +1,3 @@
+This code is designed to work in Glitch.com where it generates a two-player interaction that allows both instances to see all fingers that the other instance
+has placed upon the screen. All points from both instances where a finger is placed is connected to all other points with lines that vary in thickness linearly
+to the distance between those two points.
